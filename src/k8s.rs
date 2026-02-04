@@ -3,15 +3,22 @@ use std::process::{Command, Stdio};
 use std::sync::Mutex;
 
 #[derive(Debug, Clone)]
+/// Resolved target host for running remote capture.
 pub struct Target {
     pub host: String,
 }
 
+/// Executes external commands for capture-related queries.
 pub trait Runner {
+    /// Runs a command and returns trimmed stdout on success.
+    /// Parameters: `program` (&str) executable name.
+    /// Parameters: `args` (&[&str]) argument list.
+    /// Returns: Result<String> with trimmed stdout or an error.
     // Abstract external command execution for testability.
     fn run_capture(&self, program: &str, args: &[&str]) -> Result<String>;
 }
 
+/// Runner implementation that invokes system binaries.
 pub struct SystemRunner;
 
 impl Runner for SystemRunner {
@@ -33,6 +40,11 @@ impl Runner for SystemRunner {
     }
 }
 
+/// Resolves a Kubernetes pod to its node name.
+/// Parameters: `runner` (&impl Runner) command runner.
+/// Parameters: `namespace` (&str) pod namespace.
+/// Parameters: `pod` (&str) pod name.
+/// Returns: Result<String> node name or an error if missing.
 pub fn resolve_pod_node(runner: &impl Runner, namespace: &str, pod: &str) -> Result<String> {
     // Map pod to node to determine where capture should run.
     let args = [
@@ -52,18 +64,23 @@ pub fn resolve_pod_node(runner: &impl Runner, namespace: &str, pod: &str) -> Res
 }
 
 #[derive(Debug, Default)]
+/// Test runner that returns a fixed node and records calls.
 pub struct FakeRunner {
     pub node_name: String,
     pub last_command: Mutex<CommandRecord>,
 }
 
 #[derive(Debug, Default, Clone)]
+/// Records the last command executed by a runner.
 pub struct CommandRecord {
     pub program: String,
     pub args: Vec<String>,
 }
 
 impl FakeRunner {
+    /// Creates a FakeRunner that returns the provided node name.
+    /// Parameters: `node_name` (&str) node name to return.
+    /// Returns: FakeRunner instance for tests.
     pub fn new(node_name: &str) -> Self {
         Self {
             node_name: node_name.to_string(),

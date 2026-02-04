@@ -1,6 +1,13 @@
 ﻿use anyhow::{Context, Result};
 use std::process::{Child, Command, Stdio};
 
+/// Builds SSH arguments for running a remote command.
+/// Parameters: `user` (Option<&str>) optional SSH username.
+/// Parameters: `host` (&str) target host.
+/// Parameters: `port` (u16) SSH port.
+/// Parameters: `jump_host` (Option<&str>) optional bastion host.
+/// Parameters: `remote_cmd` (&str) command executed on the remote host.
+/// Returns: Vec<String> argument list for the ssh command.
 pub fn build_ssh_args(
     user: Option<&str>,
     host: &str,
@@ -35,6 +42,9 @@ pub fn build_ssh_args(
     args
 }
 
+/// Spawns an ssh process with piped stdout.
+/// Parameters: `args` (&[String]) argument list for ssh.
+/// Returns: Result<Child> handle to the spawned process.
 pub fn spawn_ssh(args: &[String]) -> Result<Child> {
     // Keep stdout piped for capture bytes and inherit stderr for feedback.
     Command::new("ssh")

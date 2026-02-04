@@ -7,6 +7,7 @@
     about = "Remote packet capture helper",
     long_about = "Capture packets remotely over SSH, with optional Kubernetes pod-to-node resolution."
 )]
+/// CLI arguments for a capture run.
 pub struct Args {
     // SSH identity for connecting to the target.
     #[arg(long, help = "SSH username (optional)")]
@@ -55,6 +56,7 @@ pub struct Args {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum)]
+/// Protocol selector for capture filtering.
 pub enum Protocol {
     Tcp,
     Udp,
@@ -62,6 +64,7 @@ pub enum Protocol {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum)]
+/// Output format selector for capture tools.
 pub enum CaptureFormat {
     Pcap,
     Pcapng,

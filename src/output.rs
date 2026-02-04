@@ -2,6 +2,10 @@
 use std::fs::File;
 use std::io::{self, Read, Write};
 
+/// Writes capture bytes to stdout or a file.
+/// Parameters: `reader` (R) readable stream of capture bytes.
+/// Parameters: `output` (&str) path or "-" for stdout.
+/// Returns: Result<()> indicating success or failure.
 pub fn write_stream<R: Read>(mut reader: R, output: &str) -> Result<()> {
     // Stream capture bytes directly to stdout or a file.
     if output == "-" {

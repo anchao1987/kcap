@@ -4,11 +4,15 @@ use std::thread;
 use std::time::Duration;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+/// Capture tool choices supported by the remote host.
 pub enum CaptureTool {
     Tcpdump,
     Tshark,
 }
 
+/// Selects the capture tool for a requested format.
+/// Parameters: `format` (CaptureFormat) requested output format.
+/// Returns: CaptureTool chosen to satisfy the format.
 pub fn select_tool(format: CaptureFormat) -> CaptureTool {
     // tshark reliably emits pcapng; tcpdump is fine for pcap.
     match format {
@@ -17,6 +21,12 @@ pub fn select_tool(format: CaptureFormat) -> CaptureTool {
     }
 }
 
+/// Builds a remote capture command that streams bytes to stdout.
+/// Parameters: `tool` (CaptureTool) capture backend to invoke.
+/// Parameters: `iface` (&str) interface name (e.g. "eth0", "any").
+/// Parameters: `format` (CaptureFormat) requested output format.
+/// Parameters: `filter` (Option<&str>) optional capture filter expression.
+/// Returns: String containing a shell command for remote execution.
 pub fn build_capture_command(
     tool: CaptureTool,
     iface: &str,
@@ -51,6 +61,9 @@ pub fn build_capture_command(
     }
 }
 
+/// Terminates a child process after a timeout.
+/// Parameters: `child` (&mut Child) spawned process handle.
+/// Parameters: `seconds` (u64) timeout in seconds; 0 disables termination.
 pub fn kill_after(child: &mut Child, seconds: u64) {
     if seconds == 0 {
         return;

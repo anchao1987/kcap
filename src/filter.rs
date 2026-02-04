@@ -1,5 +1,10 @@
 ﻿use crate::cli::Protocol;
 
+/// Builds a capture filter expression from optional inputs.
+/// Parameters: `port` (Option<u16>) optional port to filter.
+/// Parameters: `protocol` (Protocol) protocol selector.
+/// Parameters: `extra` (Option<&str>) extra filter expression to combine.
+/// Returns: Option<String> with the combined filter, or None when empty.
 pub fn build_filter(port: Option<u16>, protocol: Protocol, extra: Option<&str>) -> Option<String> {
     // Compose a single tcpdump/tshark filter expression from optional inputs.
     let base = port.map(|p| match protocol {

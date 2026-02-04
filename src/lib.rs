@@ -10,6 +10,9 @@ use cli::{Args, CaptureFormat};
 use k8s::Target;
 use tracing::{info, warn};
 
+/// Runs a single capture workflow from parsed CLI arguments.
+/// Parameters: `args` (Args) parsed CLI arguments.
+/// Returns: Result<()> indicating success or failure.
 pub fn run(args: Args) -> Result<()> {
     // Orchestrates a single capture run.
     let runner = k8s::SystemRunner;

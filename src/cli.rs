@@ -1,51 +1,56 @@
 ﻿use clap::{Parser, ValueEnum};
 
 #[derive(Parser, Debug, Clone)]
-#[command(name = "kcap", version, about = "Remote packet capture helper")]
+#[command(
+    name = "kcap",
+    version,
+    about = "Remote packet capture helper",
+    long_about = "Capture packets remotely over SSH, with optional Kubernetes pod-to-node resolution."
+)]
 pub struct Args {
-    // 连接目标时使用的 SSH 身份。
-    #[arg(long)]
+    // SSH identity for connecting to the target.
+    #[arg(long, help = "SSH username (optional)")]
     pub ssh_user: Option<String>,
 
-    // 直接指定 SSH 主机目标，跳过 k8s 解析。
-    #[arg(long)]
+    // Direct SSH target, bypassing k8s lookup.
+    #[arg(long, help = "Direct SSH target host (skip k8s)")]
     pub ssh_host: Option<String>,
 
-    #[arg(long, default_value_t = 22)]
+    #[arg(long, default_value_t = 22, help = "SSH port")]
     pub ssh_port: u16,
 
-    #[arg(long)]
+    #[arg(long, help = "SSH jump host (bastion)")]
     pub jump_host: Option<String>,
 
-    #[arg(long)]
+    #[arg(long, help = "Kubernetes namespace")]
     pub namespace: Option<String>,
 
-    #[arg(long)]
+    #[arg(long, help = "Kubernetes pod name (resolved to node)")]
     pub pod: Option<String>,
 
-    #[arg(long)]
+    #[arg(long, help = "Container name (reserved)")]
     pub container: Option<String>,
 
-    #[arg(long)]
+    #[arg(long, help = "Port filter")]
     pub port: Option<u16>,
 
-    #[arg(long, value_enum, default_value_t = Protocol::All)]
+    #[arg(long, value_enum, default_value_t = Protocol::All, help = "Protocol filter")]
     pub protocol: Protocol,
 
-    #[arg(long, default_value = "any")]
+    #[arg(long, default_value = "any", help = "Capture interface (e.g. eth0/any)")]
     pub iface: String,
 
-    #[arg(long, default_value = "capture.pcap")]
+    #[arg(long, default_value = "capture.pcap", help = "Output file, use - for stdout")]
     pub output: String,
 
-    // 格式会影响远端选择的抓包工具。
-    #[arg(long, value_enum, default_value_t = CaptureFormat::Pcap)]
+    // Format controls which capture tool is selected remotely.
+    #[arg(long, value_enum, default_value_t = CaptureFormat::Pcap, help = "Output format")]
     pub format: CaptureFormat,
 
-    #[arg(long)]
+    #[arg(long, help = "Capture duration (seconds), empty means run until stopped")]
     pub duration: Option<u64>,
 
-    #[arg(long)]
+    #[arg(long, help = "Additional capture filter expression (combined with port)")]
     pub filter: Option<String>,
 }
 

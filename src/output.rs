@@ -3,16 +3,16 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 
 pub fn write_stream<R: Read>(mut reader: R, output: &str) -> Result<()> {
-    // 将抓包字节流直接写到 stdout 或文件。
+    // Stream capture bytes directly to stdout or a file.
     if output == "-" {
-        // 允许无中间文件地管道输出到其他工具。
+        // Allow piping to other tools without an intermediate file.
         let mut stdout = io::stdout().lock();
         io::copy(&mut reader, &mut stdout).context("failed to write to stdout")?;
         stdout.flush().ok();
         return Ok(());
     }
 
-    // 为单次抓包创建或截断输出文件。
+    // Create or truncate the output file for a single session.
     let mut file = File::create(output).with_context(|| format!("failed to create {output}"))?;
     io::copy(&mut reader, &mut file).context("failed to write to file")?;
     file.flush().ok();

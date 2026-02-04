@@ -1,4 +1,4 @@
-use crate::cli::CaptureFormat;
+﻿use crate::cli::CaptureFormat;
 use std::process::Child;
 use std::thread;
 use std::time::Duration;
@@ -10,6 +10,7 @@ pub enum CaptureTool {
 }
 
 pub fn select_tool(format: CaptureFormat) -> CaptureTool {
+    // tshark 才能稳定输出 pcapng，pcap 则可用 tcpdump。
     match format {
         CaptureFormat::Pcapng => CaptureTool::Tshark,
         CaptureFormat::Pcap => CaptureTool::Tcpdump,
@@ -22,6 +23,7 @@ pub fn build_capture_command(
     format: CaptureFormat,
     filter: Option<&str>,
 ) -> String {
+    // 构建可安全执行的命令，把抓包字节流输出到 stdout。
     let filter_escaped = filter.map(shell_escape_single_quotes);
 
     match tool {
@@ -54,6 +56,7 @@ pub fn kill_after(child: &mut Child, seconds: u64) {
         return;
     }
 
+    // 在不阻塞调用线程的情况下强制停止抓包。
     let id = child.id();
     thread::spawn(move || {
         thread::sleep(Duration::from_secs(seconds));
@@ -74,6 +77,7 @@ pub fn kill_after(child: &mut Child, seconds: u64) {
 }
 
 fn shell_escape_single_quotes(input: &str) -> String {
+    // 远程命令经 `sh -c` 执行，必须保证引号安全。
     if input.is_empty() {
         return "''".to_string();
     }

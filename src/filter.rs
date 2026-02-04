@@ -1,12 +1,14 @@
-use crate::cli::Protocol;
+﻿use crate::cli::Protocol;
 
 pub fn build_filter(port: Option<u16>, protocol: Protocol, extra: Option<&str>) -> Option<String> {
+    // 将可选条件拼成一条 tcpdump/tshark 过滤表达式。
     let base = port.map(|p| match protocol {
         Protocol::All => format!("port {p}"),
         Protocol::Tcp => format!("tcp port {p}"),
         Protocol::Udp => format!("udp port {p}"),
     });
 
+    // 在保留额外过滤条件的同时保证语法正确。
     match (base, extra) {
         (Some(b), Some(e)) => Some(format!("({b}) and ({e})")),
         (Some(b), None) => Some(b),

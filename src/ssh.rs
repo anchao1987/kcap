@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+﻿use anyhow::{Context, Result};
 use std::process::{Child, Command, Stdio};
 
 pub fn build_ssh_args(
@@ -8,6 +8,7 @@ pub fn build_ssh_args(
     jump_host: Option<&str>,
     remote_cmd: &str,
 ) -> Vec<String> {
+    // 构造非交互式 SSH 调用用于远程抓包。
     let mut args = Vec::new();
     args.push("-o".to_string());
     args.push("BatchMode=yes".to_string());
@@ -15,6 +16,7 @@ pub fn build_ssh_args(
     args.push(port.to_string());
 
     if let Some(jump) = jump_host {
+        // 支持堡垒机跳转且不改变调用方逻辑。
         args.push("-J".to_string());
         args.push(jump.to_string());
     }
@@ -34,6 +36,7 @@ pub fn build_ssh_args(
 }
 
 pub fn spawn_ssh(args: &[String]) -> Result<Child> {
+    // stdout 保持管道输出抓包数据，stderr 继承以便提示用户。
     Command::new("ssh")
         .args(args)
         .stdout(Stdio::piped())

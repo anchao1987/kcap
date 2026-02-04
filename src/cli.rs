@@ -1,11 +1,13 @@
-use clap::{Parser, ValueEnum};
+﻿use clap::{Parser, ValueEnum};
 
 #[derive(Parser, Debug, Clone)]
 #[command(name = "kcap", version, about = "Remote packet capture helper")]
 pub struct Args {
+    // 连接目标时使用的 SSH 身份。
     #[arg(long)]
     pub ssh_user: Option<String>,
 
+    // 直接指定 SSH 主机目标，跳过 k8s 解析。
     #[arg(long)]
     pub ssh_host: Option<String>,
 
@@ -36,6 +38,7 @@ pub struct Args {
     #[arg(long, default_value = "capture.pcap")]
     pub output: String,
 
+    // 格式会影响远端选择的抓包工具。
     #[arg(long, value_enum, default_value_t = CaptureFormat::Pcap)]
     pub format: CaptureFormat,
 

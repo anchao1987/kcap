@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+﻿use anyhow::{bail, Context, Result};
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
 
@@ -8,6 +8,7 @@ pub struct Target {
 }
 
 pub trait Runner {
+    // 抽象外部命令执行，便于测试替换。
     fn run_capture(&self, program: &str, args: &[&str]) -> Result<String>;
 }
 
@@ -15,6 +16,7 @@ pub struct SystemRunner;
 
 impl Runner for SystemRunner {
     fn run_capture(&self, program: &str, args: &[&str]) -> Result<String> {
+        // 同时抓取 stdout 与 stderr，便于清晰呈现 kubectl 错误。
         let output = Command::new(program)
             .args(args)
             .stdout(Stdio::piped())
@@ -32,6 +34,7 @@ impl Runner for SystemRunner {
 }
 
 pub fn resolve_pod_node(runner: &impl Runner, namespace: &str, pod: &str) -> Result<String> {
+    // 把 pod 映射到节点，以确定抓包应在哪台主机执行。
     let args = [
         "get",
         "pod",
@@ -71,6 +74,7 @@ impl FakeRunner {
 
 impl Runner for FakeRunner {
     fn run_capture(&self, program: &str, args: &[&str]) -> Result<String> {
+        // 记录调用细节，测试中无需真正执行 kubectl。
         let mut rec = self.last_command.lock().unwrap();
         rec.program = program.to_string();
         rec.args = args.iter().map(|s| s.to_string()).collect();

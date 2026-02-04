@@ -1,132 +1,142 @@
 # kcap
 
-ÏÂÃæÊÇÒ»·Ý¿ÉÂäµØµÄÉè¼ÆÎÄµµ²Ý°¸£¬Ä¿±êÊÇÓÃ Rust ¹¹½¨Ò»¸öÍ¨¹ý SSH Ô¶³Ì½øÈë K8S ¼¯Èº²¢×¥È¡Ö¸¶¨¶Ë¿ÚÁ÷Á¿¡¢Êä³ö Wireshark ¿É·ÖÎö¸ñÊ½£¨pcap/pcapng£©µÄ¹¤¾ß¡£ÎÄµµÆ«¹¤³Ì»¯£¬±ãÓÚºóÐøÓÃ Vibe Coding Ö±½ÓÂäµØ¡£
+**1. èƒŒæ™¯ä¸Žç›®æ ‡**
 
-**Éè¼ÆÎÄµµ£º»ùÓÚ SSH µÄ K8S Ô¶³Ì×¥°ü¹¤¾ß£¨Rust£©**
+- ç›®æ ‡ç”¨æˆ·ï¼šè¿ç»´/ç ”å‘ï¼Œéœ€è¦åœ¨ç”Ÿäº§æˆ–æµ‹è¯• K8S é›†ç¾¤ä¸­å¿«é€ŸæŠ“åŒ…åˆ†æžç«¯å£æµé‡ã€‚
+- ç›®æ ‡èƒ½åŠ›ï¼š
+  - é€šè¿‡ SSH è¿žæŽ¥åˆ°é›†ç¾¤ä¸­çš„èŠ‚ç‚¹æˆ–æŒ‡å®š Podã€‚
+  - æ”¯æŒé€‰æ‹©å‘½åç©ºé—´ã€Podã€å®¹å™¨ã€ç«¯å£ã€åè®®ã€‚
+  - åœ¨è¿œç«¯æŠ“åŒ…å¹¶è¾“å‡º pcap/pcapngï¼ˆWireshark å¯ç›´æŽ¥æ‰“å¼€ï¼‰ã€‚
+  - æ”¯æŒæœ¬åœ°ä¿å­˜ä¸Žå®žæ—¶æµå¼å¯¼å‡ºã€‚
+- éžç›®æ ‡ï¼š
+  - ä¸åšå¤æ‚ UIï¼ˆä»… CLIï¼‰ã€‚
+  - ä¸å†…ç½® K8S API æƒé™ç®¡ç†ï¼ˆç”±ç”¨æˆ·çš„ kubeconfig æˆ– SSH æƒé™æŽ§åˆ¶ï¼‰ã€‚
 
-**1. ±³¾°ÓëÄ¿±ê**
-- Ä¿±êÓÃ»§£ºÔËÎ¬/ÑÐ·¢£¬ÐèÒªÔÚÉú²ú»ò²âÊÔ K8S ¼¯ÈºÖÐ¿ìËÙ×¥°ü·ÖÎö¶Ë¿ÚÁ÷Á¿¡£
-- Ä¿±êÄÜÁ¦£º
-  - Í¨¹ý SSH Á¬½Óµ½¼¯ÈºÖÐµÄ½Úµã»òÖ¸¶¨ Pod¡£
-  - Ö§³ÖÑ¡ÔñÃüÃû¿Õ¼ä¡¢Pod¡¢ÈÝÆ÷¡¢¶Ë¿Ú¡¢Ð­Òé¡£
-  - ÔÚÔ¶¶Ë×¥°ü²¢Êä³ö pcap/pcapng£¨Wireshark ¿ÉÖ±½Ó´ò¿ª£©¡£
-  - Ö§³Ö±¾µØ±£´æÓëÊµÊ±Á÷Ê½µ¼³ö¡£
-- ·ÇÄ¿±ê£º
-  - ²»×ö¸´ÔÓ UI£¨½ö CLI£©¡£
-  - ²»ÄÚÖÃ K8S API È¨ÏÞ¹ÜÀí£¨ÓÉÓÃ»§µÄ kubeconfig »ò SSH È¨ÏÞ¿ØÖÆ£©¡£
+**2. å…³é”®ä½¿ç”¨åœºæ™¯**
 
-**2. ¹Ø¼üÊ¹ÓÃ³¡¾°**
-- SRE ÐèÒª¶Ô `namespace=prod` ÖÐÄ³¸ö·þÎñ 443 ¶Ë¿ÚÒì³£Á÷Á¿×ö·ÖÎö¡£
-- ÑÐ·¢ÐèÒª¶ÔÄ³¸ö Pod ÄÚ²¿×¥°ü£¬¶¨Î»Ó¦ÓÃ²ã´íÎó¡£
-- ÐèÒªÍ¨¹ýÌø°å»ú£¨SSH£©½øÈë¼¯Èº½Úµã½øÐÐ×¥°ü¡£
+- SRE éœ€è¦å¯¹ `namespace=prod` ä¸­æŸä¸ªæœåŠ¡ 443 ç«¯å£å¼‚å¸¸æµé‡åšåˆ†æžã€‚
+- ç ”å‘éœ€è¦å¯¹æŸä¸ª Pod å†…éƒ¨æŠ“åŒ…ï¼Œå®šä½åº”ç”¨å±‚é”™è¯¯ã€‚
+- éœ€è¦é€šè¿‡è·³æ¿æœºï¼ˆSSHï¼‰è¿›å…¥é›†ç¾¤èŠ‚ç‚¹è¿›è¡ŒæŠ“åŒ…ã€‚
 
-**3. Éè¼ÆÔ¼Êø**
-- Ô¶¶Ë±ØÐë¾ß±¸×¥°üÄÜÁ¦£¨tcpdump »ò tshark£©¡£
-- Rust ÊµÏÖ£¬ÓÅÏÈÊ¹ÓÃÎÈ¶¨¿â£º
-  - SSH£º`ssh2` »ò `russh`¡£
-  - CLI£º`clap`¡£
-  - ÈÕÖ¾£º`tracing`¡£
-- Wireshark ¸ñÊ½£ºÓÅÏÈ `pcapng`£¬¼æÈÝ `pcap`¡£
-- ¿çÆ½Ì¨£ºÖÁÉÙÖ§³Ö Linux/macOS£»Windows ×÷Îª¿ÉÑ¡Ä¿±ê¡£
+**3. è®¾è®¡çº¦æŸ**
 
-**4. ×ÜÌå¼Ü¹¹**
+- è¿œç«¯å¿…é¡»å…·å¤‡æŠ“åŒ…èƒ½åŠ›ï¼ˆtcpdump æˆ– tsharkï¼‰ã€‚
+- Rust å®žçŽ°ï¼Œä¼˜å…ˆä½¿ç”¨ç¨³å®šåº“ï¼š
+  - SSHï¼š`ssh2` æˆ– `russh`ã€‚
+  - CLIï¼š`clap`ã€‚
+  - æ—¥å¿—ï¼š`tracing`ã€‚
+- Wireshark æ ¼å¼ï¼šä¼˜å…ˆ `pcapng`ï¼Œå…¼å®¹ `pcap`ã€‚
+- è·¨å¹³å°ï¼šè‡³å°‘æ”¯æŒ Linux/macOSï¼›Windows ä½œä¸ºå¯é€‰ç›®æ ‡ã€‚
+
+**4. æ€»ä½“æž¶æž„**
 
 ```
 CLI
- ©À©¤©¤ Config Loader
- ©À©¤©¤ SSH Client
- ©¦    ©À©¤©¤ Jump Host Support (ProxyCommand)
- ©¦    ©¸©¤©¤ Remote Exec (tcpdump/tshark)
- ©À©¤©¤ Remote Capture
- ©¦    ©À©¤©¤ Port Filter Generator
- ©¦    ©À©¤©¤ Packet Stream
- ©¸©¤©¤ Local Output
-      ©À©¤©¤ File Writer (pcap/pcapng)
-      ©¸©¤©¤ Stream (stdout/pipe)
+ â”œâ”€â”€ Config Loader
+ â”œâ”€â”€ SSH Client
+ â”‚    â”œâ”€â”€ Jump Host Support (ProxyCommand)
+ â”‚    â””â”€â”€ Remote Exec (tcpdump/tshark)
+ â”œâ”€â”€ Remote Capture
+ â”‚    â”œâ”€â”€ Port Filter Generator
+ â”‚    â”œâ”€â”€ Packet Stream
+ â””â”€â”€ Local Output
+      â”œâ”€â”€ File Writer (pcap/pcapng)
+      â””â”€â”€ Stream (stdout/pipe)
 ```
 
-**5. ºËÐÄÁ÷³Ì**
-1. ÓÃ»§Ö¸¶¨Ä¿±ê£¨½Úµã»ò Pod£©¡£
-2. ¹¤¾ßÍ¨¹ý SSH Á¬½Óµ½Ä¿±ê½Úµã»ò Pod ËùÔÚ½Úµã£¨±ØÒªÊ±Ê¹ÓÃ jump host£©¡£
-3. ÔÚÔ¶¶ËÖ´ÐÐ `tcpdump -i <iface> <filter> -w -`£¨Ð´µ½ stdout£©¡£
-4. ±¾µØ½ÓÊÕ¶þ½øÖÆÁ÷²¢±£´æÎª `.pcap` »ò `.pcapng`¡£
-5. ÓÃ»§ÓÃ Wireshark ´ò¿ª·ÖÎö¡£
+**5. æ ¸å¿ƒæµç¨‹**
 
-**6. Ä£¿éÉè¼Æ**
+1. ç”¨æˆ·æŒ‡å®šç›®æ ‡ï¼ˆèŠ‚ç‚¹æˆ– Podï¼‰ã€‚
+2. å·¥å…·é€šè¿‡ SSH è¿žæŽ¥åˆ°ç›®æ ‡èŠ‚ç‚¹æˆ– Pod æ‰€åœ¨èŠ‚ç‚¹ï¼ˆå¿…è¦æ—¶ä½¿ç”¨ jump hostï¼‰ã€‚
+3. åœ¨è¿œç«¯æ‰§è¡Œ `tcpdump -i <iface> <filter> -w -`ï¼ˆå†™åˆ° stdoutï¼‰ã€‚
+4. æœ¬åœ°æŽ¥æ”¶äºŒè¿›åˆ¶æµå¹¶ä¿å­˜ä¸º `.pcap` æˆ– `.pcapng`ã€‚
+5. ç”¨æˆ·ç”¨ Wireshark æ‰“å¼€åˆ†æžã€‚
 
-**6.1 CLI Ä£¿é**
-- ÃüÁî£º`kcap`
-- ¹Ø¼ü²ÎÊý£º
+**6. æ¨¡å—è®¾è®¡**
+
+**6.1 CLI æ¨¡å—**
+
+- å‘½ä»¤ï¼š`kcap`
+- å…³é”®å‚æ•°ï¼š
   - `--ssh-user`
   - `--ssh-host`
   - `--ssh-port`
-  - `--jump-host`£¨¿ÉÑ¡£©
+  - `--jump-host`ï¼ˆå¯é€‰ï¼‰
   - `--namespace`
   - `--pod`
   - `--container`
   - `--port`
   - `--protocol` (`tcp|udp|all`)
-  - `--iface`£¨Ä¬ÈÏ `any`£©
-  - `--output`£¨Ä¬ÈÏ `capture.pcap`£©
+  - `--iface`ï¼ˆé»˜è®¤ `any`ï¼‰
+  - `--output`ï¼ˆé»˜è®¤ `capture.pcap`ï¼‰
   - `--format` (`pcap|pcapng`)
-  - `--duration`£¨¿ÉÑ¡£©
-  - `--filter`£¨×Ô¶¨Òå tcpdump ±í´ïÊ½£©
+  - `--duration`ï¼ˆå¯é€‰ï¼‰
+  - `--filter`ï¼ˆè‡ªå®šä¹‰ tcpdump è¡¨è¾¾å¼ï¼‰
 
-**6.2 K8S Ä¿±ê½âÎöÄ£¿é**
-- Ä¿±ê½âÎö²ßÂÔ£º
-  - Èô `--ssh-host` Ö¸¶¨½Úµã£¬Ö±½Ó×¥¡£
-  - ÈôÖ¸¶¨ Pod£º
-    - Í¨¹ý `kubectl get pod -o wide` »ñÈ¡ Pod ËùÔÚ½Úµã¡£
-    - Èç¹ûÄÜ `kubectl exec`£¬¿ÉÖ±½ÓÔÚ Pod ÖÐ×¥°ü£¨ÐèÒªÌØÈ¨ÈÝÆ÷£©¡£
-- ÒÀÀµ£ºµ÷ÓÃ `kubectl`£¨Íâ²¿ÃüÁî£©£¬±ÜÃâÒýÈë k8s API ¿Í»§¶Ë¸´ÔÓ¶È¡£
+**6.2 K8S ç›®æ ‡è§£æžæ¨¡å—**
 
-**6.3 SSH Ä£¿é**
-- Ö§³Ö£º
-  - ÃÜÂë/Ë½Ô¿ÈÏÖ¤¡£
-  - jump host£¨Í¨¹ý `ProxyCommand` »ò¶þ´Î SSH Á´½Ó£©¡£
-- Ô¶¶ËÖ´ÐÐ£º
+- ç›®æ ‡è§£æžç­–ç•¥ï¼š
+  - è‹¥ `--ssh-host` æŒ‡å®šèŠ‚ç‚¹ï¼Œç›´æŽ¥æŠ“ã€‚
+  - è‹¥æŒ‡å®š Podï¼š
+    - é€šè¿‡ `kubectl get pod -o wide` èŽ·å– Pod æ‰€åœ¨èŠ‚ç‚¹ã€‚
+    - å¦‚æžœèƒ½ `kubectl exec`ï¼Œå¯ç›´æŽ¥åœ¨ Pod ä¸­æŠ“åŒ…ï¼ˆéœ€è¦ç‰¹æƒå®¹å™¨ï¼‰ã€‚
+- ä¾èµ–ï¼šè°ƒç”¨ `kubectl`ï¼ˆå¤–éƒ¨å‘½ä»¤ï¼‰ï¼Œé¿å…å¼•å…¥ k8s API å®¢æˆ·ç«¯å¤æ‚åº¦ã€‚
+
+**6.3 SSH æ¨¡å—**
+
+- æ”¯æŒï¼š
+  - å¯†ç /ç§é’¥è®¤è¯ã€‚
+  - jump hostï¼ˆé€šè¿‡ `ProxyCommand` æˆ–äºŒæ¬¡ SSH é“¾æŽ¥ï¼‰ã€‚
+- è¿œç«¯æ‰§è¡Œï¼š
   - `tcpdump -i any port 443 -w -`
-  - ²¶»ñ stdout µÄ¶þ½øÖÆÁ÷¡£
+  - æ•èŽ· stdout çš„äºŒè¿›åˆ¶æµã€‚
 
-**6.4 ×¥°üÄ£¿é**
-- ¹ýÂË¹æÔòÉú³É£º
+**6.4 æŠ“åŒ…æ¨¡å—**
+
+- è¿‡æ»¤è§„åˆ™ç”Ÿæˆï¼š
   - `port 443`
   - `tcp port 443`
   - `udp port 53`
-- Ö§³Ö¸½¼Ó filter£º`(port 443) and host 10.0.0.5`
-- Ô¶¶ËÖ´ÐÐ tcpdump Ê±¼Ó `-U`£¨ÊµÊ±Ë¢ÐÂ£©Óë `-s 0`£¨×¥È«°ü£©¡£
+- æ”¯æŒé™„åŠ  filterï¼š`(port 443) and host 10.0.0.5`
+- è¿œç«¯æ‰§è¡Œ tcpdump æ—¶åŠ  `-U`ï¼ˆå®žæ—¶åˆ·æ–°ï¼‰ä¸Ž `-s 0`ï¼ˆæŠ“å…¨åŒ…ï¼‰ã€‚
 
-**6.5 Êä³öÄ£¿é**
-- Ä¬ÈÏÐ´±¾µØÎÄ¼þ£º
+**6.5 è¾“å‡ºæ¨¡å—**
+
+- é»˜è®¤å†™æœ¬åœ°æ–‡ä»¶ï¼š
   - `capture-YYYYMMDD-HHMMSS.pcap`
-- Ö§³Ö `stdout`£¨ÓÃÓÚ¹ÜµÀ´«Êä£¬±ÈÈçÖ±½ÓËÍ Wireshark£©¡£
+- æ”¯æŒ `stdout`ï¼ˆç”¨äºŽç®¡é“ä¼ è¾“ï¼Œæ¯”å¦‚ç›´æŽ¥é€ Wiresharkï¼‰ã€‚
 
-**7. °²È«ÓëÈ¨ÏÞ**
-- SSH ÐèÒª×ã¹»È¨ÏÞÖ´ÐÐ `tcpdump`¡£
-- ¶Ô Pod ÄÚ×¥°ü£¬¿ÉÄÜÐèÒª `NET_ADMIN` »òÌØÈ¨ÈÝÆ÷¡£
-- ²»ÔÚ¹¤¾ßÖÐ»º´æÃô¸ÐÆ¾Ö¤¡£
+**7. å®‰å…¨ä¸Žæƒé™**
 
-**8. ´íÎó´¦Àí**
-- ³£¼û´íÎó£º
-  - SSH Á¬½ÓÊ§°Ü¡£
-  - `tcpdump` Î´°²×°¡£
-  - È¨ÏÞ²»×ã£¨`tcpdump: You don't have permission...`£©¡£
-- ´¦Àí²ßÂÔ£º
-  - Ã÷È·´íÎóÏûÏ¢£¨stderr Êä³ö£©¡£
-  - ÌáÊ¾°²×°»òÌáÈ¨½¨Òé¡£
+- SSH éœ€è¦è¶³å¤Ÿæƒé™æ‰§è¡Œ `tcpdump`ã€‚
+- å¯¹ Pod å†…æŠ“åŒ…ï¼Œå¯èƒ½éœ€è¦ `NET_ADMIN` æˆ–ç‰¹æƒå®¹å™¨ã€‚
+- ä¸åœ¨å·¥å…·ä¸­ç¼“å­˜æ•æ„Ÿå‡­è¯ã€‚
 
-**9. ¹Ø¼ü¼¼ÊõÑ¡ÐÍ**
-- SSH£º`ssh2`£¨libssh2 °ó¶¨£©»ò `russh`¡£
-- CLI£º`clap`¡£
-- ½ø³ÌÖ´ÐÐ£º`std::process::Command`¡£
-- ÈÕÖ¾£º`tracing`¡£
+**8. é”™è¯¯å¤„ç†**
 
-**10. Àï³Ì±®**
-1. MVP£ºÖ§³Ö SSH Á¬½Ó½Úµã + tcpdump ×¥°ü + pcap Êä³ö¡£
-2. ÔöÇ¿£ºÖ§³Ö Pod ¶¨Î» + jump host¡£
-3. ¸ß¼¶£ºÖ§³ÖÊµÊ±Êä³ö Wireshark£¨Í¨¹ý¹ÜµÀ»ò WebSocket£©¡£
+- å¸¸è§é”™è¯¯ï¼š
+  - SSH è¿žæŽ¥å¤±è´¥ã€‚
+  - `tcpdump` æœªå®‰è£…ã€‚
+  - æƒé™ä¸è¶³ï¼ˆ`tcpdump: You don't have permission...`ï¼‰ã€‚
+- å¤„ç†ç­–ç•¥ï¼š
+  - æ˜Žç¡®é”™è¯¯æ¶ˆæ¯ï¼ˆstderr è¾“å‡ºï¼‰ã€‚
+  - æç¤ºå®‰è£…æˆ–ææƒå»ºè®®ã€‚
 
-**11. ÑùÀýÊ¹ÓÃ**
+**9. å…³é”®æŠ€æœ¯é€‰åž‹**
+
+- SSHï¼š`ssh2`ï¼ˆlibssh2 ç»‘å®šï¼‰æˆ– `russh`ã€‚
+- CLIï¼š`clap`ã€‚
+- è¿›ç¨‹æ‰§è¡Œï¼š`std::process::Command`ã€‚
+- æ—¥å¿—ï¼š`tracing`ã€‚
+
+**10. é‡Œç¨‹ç¢‘**
+
+1. MVPï¼šæ”¯æŒ SSH è¿žæŽ¥èŠ‚ç‚¹ + tcpdump æŠ“åŒ… + pcap è¾“å‡ºã€‚
+2. å¢žå¼ºï¼šæ”¯æŒ Pod å®šä½ + jump hostã€‚
+3. é«˜çº§ï¼šæ”¯æŒå®žæ—¶è¾“å‡º Wiresharkï¼ˆé€šè¿‡ç®¡é“æˆ– WebSocketï¼‰ã€‚
+
+**11. æ ·ä¾‹ä½¿ç”¨**
+
 ```
 kcap --ssh-user root --ssh-host 10.0.0.10 --port 443 --protocol tcp --output https.pcap
 
@@ -135,7 +145,8 @@ kcap --namespace prod --pod orders-6c9f --port 8080 --output orders.pcap
 kcap --ssh-host 10.0.0.10 --port 53 --protocol udp --format pcapng --duration 60
 ```
 
-**12. ·çÏÕÓëÌæ´ú·½°¸**
-- Ô¶¶ËÃ»ÓÐ tcpdump£ºÌáÊ¾°²×°»òÊ¹ÓÃ `tshark`¡£
-- Pod ÄÚ×¥°üÈ¨ÏÞ²»×ã£ºÌáÊ¾Ê¹ÓÃÌØÈ¨ÈÝÆ÷»òÖ±½ÓÔÚ½Úµã×¥¡£
-- ¸ßÁ÷Á¿×¥°üµ¼ÖÂ IO ¸ß£º½¨Òé¼Ó filter »òÏÞÖÆ duration¡£
+**12. é£Žé™©ä¸Žæ›¿ä»£æ–¹æ¡ˆ**
+
+- è¿œç«¯æ²¡æœ‰ tcpdumpï¼šæç¤ºå®‰è£…æˆ–ä½¿ç”¨ `tshark`ã€‚
+- Pod å†…æŠ“åŒ…æƒé™ä¸è¶³ï¼šæç¤ºä½¿ç”¨ç‰¹æƒå®¹å™¨æˆ–ç›´æŽ¥åœ¨èŠ‚ç‚¹æŠ“ã€‚
+- é«˜æµé‡æŠ“åŒ…å¯¼è‡´ IO é«˜ï¼šå»ºè®®åŠ  filter æˆ–é™åˆ¶ durationã€‚

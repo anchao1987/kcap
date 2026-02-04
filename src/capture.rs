@@ -94,7 +94,7 @@ mod tests {
         let s = "host 10.0.0.1 and tcp port 443";
         assert_eq!(shell_escape_single_quotes(s), "'host 10.0.0.1 and tcp port 443'");
         let s2 = "host 'bad'";
-        assert_eq!(shell_escape_single_quotes(s2), "'host '\\'''bad'\\'''".to_string());
+        assert_eq!(shell_escape_single_quotes(s2), "'host '\\''bad'\\'''".to_string());
     }
 
     #[test]

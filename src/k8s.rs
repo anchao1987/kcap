@@ -1,11 +1,16 @@
 ﻿use anyhow::{bail, Context, Result};
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 
 #[derive(Debug, Clone)]
-/// Resolved target host for running remote capture.
-pub struct Target {
-    pub host: String,
+/// Resolved target for running remote capture.
+pub enum Target {
+    Ssh { host: String },
+    KubernetesExec {
+        namespace: String,
+        pod: String,
+        container: Option<String>,
+    },
 }
 
 /// Executes external commands for capture-related queries.
@@ -63,6 +68,49 @@ pub fn resolve_pod_node(runner: &impl Runner, namespace: &str, pod: &str) -> Res
     Ok(node)
 }
 
+/// Builds kubectl exec arguments for running a remote command inside a pod.
+/// Parameters: `namespace` (&str) pod namespace.
+/// Parameters: `pod` (&str) pod name.
+/// Parameters: `container` (Option<&str>) container name.
+/// Parameters: `remote_cmd` (&str) command executed inside the container.
+/// Returns: Vec<String> argument list for kubectl.
+pub fn build_kubectl_exec_args(
+    namespace: &str,
+    pod: &str,
+    container: Option<&str>,
+    remote_cmd: &str,
+) -> Vec<String> {
+    let mut args = Vec::new();
+    args.push("exec".to_string());
+    args.push("-n".to_string());
+    args.push(namespace.to_string());
+    args.push(pod.to_string());
+
+    if let Some(c) = container {
+        args.push("-c".to_string());
+        args.push(c.to_string());
+    }
+
+    // Execute through a shell to preserve the capture command quoting.
+    args.push("--".to_string());
+    args.push("sh".to_string());
+    args.push("-c".to_string());
+    args.push(remote_cmd.to_string());
+    args
+}
+
+/// Spawns a kubectl exec process with piped stdout.
+/// Parameters: `args` (&[String]) argument list for kubectl exec.
+/// Returns: Result<Child> handle to the spawned process.
+pub fn spawn_kubectl_exec(args: &[String]) -> Result<Child> {
+    Command::new("kubectl")
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::inherit())
+        .spawn()
+        .context("failed to spawn kubectl exec")
+}
+
 #[derive(Debug, Default)]
 /// Test runner that returns a fixed node and records calls.
 pub struct FakeRunner {
@@ -114,5 +162,26 @@ mod tests {
         assert!(rec.args.contains(&"get".to_string()));
         assert!(rec.args.contains(&"pod".to_string()));
         assert!(rec.args.contains(&"orders".to_string()));
+    }
+
+    #[test]
+    fn kubectl_exec_args_basic() {
+        let args = build_kubectl_exec_args("prod", "orders", None, "tcpdump -i any -w -");
+        assert_eq!(args[0], "exec");
+        assert!(args.iter().any(|a| a == "prod"));
+        assert!(args.iter().any(|a| a == "orders"));
+        assert!(args.iter().any(|a| a == "sh"));
+        assert!(args.iter().any(|a| a == "tcpdump -i any -w -"));
+
+        let sh_index = args.iter().position(|a| a == "sh").unwrap();
+        let c_index = args.iter().position(|a| a == "-c").unwrap();
+        assert_eq!(c_index, sh_index + 1);
+    }
+
+    #[test]
+    fn kubectl_exec_args_container() {
+        let args = build_kubectl_exec_args("prod", "orders", Some("api"), "cmd");
+        assert!(args.iter().any(|a| a == "-c"));
+        assert!(args.iter().any(|a| a == "api"));
     }
 }

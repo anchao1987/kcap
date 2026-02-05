@@ -5,7 +5,7 @@
     name = "kcap",
     version,
     about = "Remote packet capture helper",
-    long_about = "Capture packets remotely over SSH, with optional Kubernetes pod-to-node resolution."
+    long_about = "Capture packets remotely over SSH, or inside a Kubernetes pod via kubectl exec."
 )]
 /// CLI arguments for a capture run.
 pub struct Args {
@@ -29,7 +29,7 @@ pub struct Args {
     #[arg(long, help = "Kubernetes pod name (resolved to node)")]
     pub pod: Option<String>,
 
-    #[arg(long, help = "Container name (reserved)")]
+    #[arg(long, help = "Container name (kubectl exec target)")]
     pub container: Option<String>,
 
     #[arg(long, help = "Port filter")]

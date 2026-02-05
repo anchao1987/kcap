@@ -15,10 +15,8 @@ use tracing::{info, warn};
 /// Returns: Result<()> indicating success or failure.
 pub fn run(args: Args) -> Result<()> {
     // Orchestrates a single capture run.
-    let runner = k8s::SystemRunner;
-
     // Resolve a concrete target early to avoid partial work.
-    let target = resolve_target(&args, &runner)?;
+    let target = resolve_target(&args)?;
     let filter = filter::build_filter(args.port, args.protocol, args.filter.as_deref());
 
     let tool = capture::select_tool(args.format);
@@ -31,15 +29,28 @@ pub fn run(args: Args) -> Result<()> {
     let remote_cmd = capture::build_capture_command(tool, &args.iface, args.format, filter.as_deref());
     info!(%remote_cmd, "remote capture command");
 
-    let ssh_args = ssh::build_ssh_args(
-        args.ssh_user.as_deref(),
-        &target.host,
-        args.ssh_port,
-        args.jump_host.as_deref(),
-        &remote_cmd,
-    );
-
-    let mut child = ssh::spawn_ssh(&ssh_args)?;
+    let mut child = match target {
+        Target::Ssh { host } => {
+            let ssh_args = ssh::build_ssh_args(
+                args.ssh_user.as_deref(),
+                &host,
+                args.ssh_port,
+                args.jump_host.as_deref(),
+                &remote_cmd,
+            );
+            ssh::spawn_ssh(&ssh_args)?
+        }
+        Target::KubernetesExec {
+            namespace,
+            pod,
+            container,
+        } => {
+            // Run capture inside the pod via kubectl exec.
+            let kubectl_args =
+                k8s::build_kubectl_exec_args(&namespace, &pod, container.as_deref(), &remote_cmd);
+            k8s::spawn_kubectl_exec(&kubectl_args)?
+        }
+    };
 
     let duration = args.duration;
     // Bound the capture duration to avoid runaway sessions.
@@ -59,17 +70,20 @@ pub fn run(args: Args) -> Result<()> {
     Ok(())
 }
 
-fn resolve_target(args: &Args, runner: &impl k8s::Runner) -> Result<Target> {
+fn resolve_target(args: &Args) -> Result<Target> {
     // Choose the single host that will execute the capture command.
     if let Some(host) = &args.ssh_host {
-        return Ok(Target { host: host.clone() });
+        return Ok(Target::Ssh { host: host.clone() });
     }
 
     if let Some(pod) = &args.pod {
-        // Resolve pod to node so SSH targets the host with the traffic.
         let ns = args.namespace.as_deref().unwrap_or("default");
-        let node = k8s::resolve_pod_node(runner, ns, pod)?;
-        return Ok(Target { host: node });
+        // Use kubectl exec so capture runs inside the container's network namespace.
+        return Ok(Target::KubernetesExec {
+            namespace: ns.to_string(),
+            pod: pod.clone(),
+            container: args.container.clone(),
+        });
     }
 
     bail!("no target specified: set --ssh-host or --pod");
@@ -78,8 +92,6 @@ fn resolve_target(args: &Args, runner: &impl k8s::Runner) -> Result<Target> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::k8s::{FakeRunner, Runner};
-
     #[test]
     fn resolve_target_prefers_ssh_host() {
         let args = Args {
@@ -98,10 +110,11 @@ mod tests {
             duration: None,
             filter: None,
         };
-
-        let runner = FakeRunner::default();
-        let target = resolve_target(&args, &runner).unwrap();
-        assert_eq!(target.host, "10.0.0.1");
+        let target = resolve_target(&args).unwrap();
+        match target {
+            Target::Ssh { host } => assert_eq!(host, "10.0.0.1"),
+            _ => panic!("expected ssh target"),
+        }
     }
 
     #[test]
@@ -122,13 +135,47 @@ mod tests {
             duration: None,
             filter: None,
         };
+        let target = resolve_target(&args).unwrap();
+        match target {
+            Target::KubernetesExec { namespace, pod, .. } => {
+                assert_eq!(namespace, "prod");
+                assert_eq!(pod, "orders");
+            }
+            _ => panic!("expected kubectl exec target"),
+        }
+    }
 
-        let runner = FakeRunner::new("node-1");
-        let target = resolve_target(&args, &runner).unwrap();
-        assert_eq!(target.host, "node-1");
+    #[test]
+    fn resolve_target_pod_with_container() {
+        let args = Args {
+            ssh_user: None,
+            ssh_host: None,
+            ssh_port: 22,
+            jump_host: None,
+            namespace: Some("prod".to_string()),
+            pod: Some("orders".to_string()),
+            container: Some("api".to_string()),
+            port: None,
+            protocol: cli::Protocol::All,
+            iface: "any".to_string(),
+            output: "capture.pcap".to_string(),
+            format: cli::CaptureFormat::Pcap,
+            duration: None,
+            filter: None,
+        };
 
-        let called = runner.last_command.lock().unwrap().clone();
-        assert_eq!(called.program, "kubectl");
-        assert!(called.args.iter().any(|a| a == "pod"));
+        let target = resolve_target(&args).unwrap();
+        match target {
+            Target::KubernetesExec {
+                namespace,
+                pod,
+                container,
+            } => {
+                assert_eq!(namespace, "prod");
+                assert_eq!(pod, "orders");
+                assert_eq!(container.as_deref(), Some("api"));
+            }
+            _ => panic!("expected kubectl exec target"),
+        }
     }
 }
